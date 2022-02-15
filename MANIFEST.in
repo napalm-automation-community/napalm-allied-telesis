@@ -1,0 +1,3 @@
+include requirements.txt
+include napalm_alliedtelesis/templates/*.j2
+include napalm_alliedtelesis/utils/textfsm_templates/*.tpl
