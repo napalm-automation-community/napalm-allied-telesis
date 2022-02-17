@@ -4,7 +4,7 @@ import uuid
 
 from setuptools import setup, find_packages
 
-__author__ = 'David Barroso <dbarrosop@dravetech.com>'
+__author__ = 'Peter Rupp <Peter.Rupp@tq-group.com'
 
 with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines() if (len(r) > 0 and not r.startswith("#"))]
@@ -13,14 +13,14 @@ setup(
     name="napalm-alliedtelesis",
     version="0.1.0",
     packages=find_packages(),
-    author="David Barroso",
-    author_email="dbarrosop@dravetech.com",
-    description="Network Automation and Programmability Abstraction Layer with Multivendor support",
+    author="Peter Rupp",
+    author_email="Peter.Rupp@tq-group-com",
+    description="Allied Telesis Driver for Napalm",
     classifiers=[
         'Topic :: Utilities',
          'Programming Language :: Python',
-         'Programming Language :: Python :: 2',
-         'Programming Language :: Python :: 2.7',
+         'Programming Language :: Python :: 3',
+         'Programming Language :: Python :: 3.8',
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS',
     ],
