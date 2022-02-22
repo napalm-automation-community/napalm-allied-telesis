@@ -54,6 +54,12 @@ WEEK_SECONDS = 7 * DAY_SECONDS
 YEAR_SECONDS = 365 * DAY_SECONDS
 
 
+# STD REGEX PATTERNS
+IP_ADDR_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+IPV4_ADDR_REGEX = IP_ADDR_REGEX
+
+
+
 class AlliedTelesisDriver(NetworkDriver):
 	def __init__(self, hostname, username, password, timeout=60, optional_args=None):
 		"""NAPALM AlliedTelesis Handler."""
@@ -106,8 +112,8 @@ class AlliedTelesisDriver(NetworkDriver):
 			self.device.write_channel(null)
 			return {"is alive": self.device.remote_conn.transport.is_active()}
 		except ( socket.error, EOFError ):
-	 		return {"is alive": False }
-		return {"is alive": False }
+			return {"is alive": False }
+		
 
 	@staticmethod
 	def parse_uptime(uptime_str):
@@ -215,8 +221,8 @@ class AlliedTelesisDriver(NetworkDriver):
 				environment["cpu"][i] = {}
 				environment["cpu"][i]["%usage"] = float(value)
 		else:
-		 	environment["cpu"][0] = {}
-		 	environment["cpu"][0]["%usage"] = float(cpus)
+			environment["cpu"][0] = {}
+			environment["cpu"][0]["%usage"] = float(cpus)
 
 		output=self._send_command(temp_cmd)
 		stacks=re.findall(stack_regex,output,re.DOTALL|re.MULTILINE)
@@ -341,3 +347,28 @@ class AlliedTelesisDriver(NetworkDriver):
 
 	def get_optics(self):
 		pass
+
+	def get_interfaces_ip(self):
+		""" Only IPv4
+		No Data for IPv6
+		"""
+		interfaces = {}
+		command = "show ip interface"
+		show_ip_interface = self._send_command(command)
+#		command = "show ipv6 interface"
+#		show_ipv6_interface = self._send_command(command)
+		INTERNET_ADDRESS = r"\S+\s+(?P<ip>{})/(?P<prefix>\d+).*".format(IPV4_ADDR_REGEX)
+		for line in show_ip_interface.splitlines():
+			if "IP-Address" in line or "unassigned" in line:
+				continue
+			if line[0] != " ":
+				ipv4 = {}
+				interface_name = line.split()[0]
+			m = re.match(INTERNET_ADDRESS, line)
+			if m:
+				ip, prefix = m.groups()
+				ipv4.update({ip: {"prefix_length": int(prefix)}})
+				interfaces[interface_name] = {"ipv4": ipv4}
+
+		return interfaces
+		
