@@ -1,16 +1,16 @@
-Value LOCAL_PORT (\S+)
-Value CHASSIS_ID (.*)
-Value REMOTE_SYSTEM_NAME (.*)
+Value LOCAL_INTERFACE (\S+)
+Value REMOTE_CHASSIS_ID (.*)
 Value REMOTE_PORT (.*)
 Value REMOTE_PORT_DESCRIPTION (.*)
+Value REMOTE_SYSTEM_NAME (.*)
 Value List REMOTE_SYSTEM_DESCRIPTION (.*)
-Value List REMOTE_SYSTEM_CAPAB (.*)
-Value List REMOTE_SYSTEM_ENABLE_CABAP (.*)
+Value REMOTE_SYSTEM_CAPAB (.*)
+Value REMOTE_SYSTEM_ENABLE_CABAP (.*)
 
 
 Start
-  ^Local ${LOCAL_PORT}: 
-  ^\s+Chassis ID\s\S+\s${CHASSIS_ID}
+  ^Local ${LOCAL_INTERFACE}: 
+  ^\s+Chassis ID\s\S+\s${REMOTE_CHASSIS_ID}
   ^\s+Port ID\s\S+\s${REMOTE_PORT}
   ^\s+Port Description\s\S+\s${REMOTE_PORT_DESCRIPTION}
   ^\s+System Name\s\S+\s${REMOTE_SYSTEM_NAME} -> Description

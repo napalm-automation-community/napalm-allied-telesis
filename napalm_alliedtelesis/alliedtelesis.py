@@ -12,37 +12,37 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-import copy
-import functools
-import os
+#import copy
+#import functools
+#import os
 import re
 import socket
-import telnetlib
-import tempfile
-import uuid
-from collections import defaultdict
+#import telnetlib
+#import tempfile
+#import uuid
+#from collections import defaultdict
 
-from netaddr import IPNetwork
-from netaddr.core import AddrFormatError
-from netmiko import FileTransfer, InLineTransfer
+#from netaddr import IPNetwork
+#from netaddr.core import AddrFormatError
+#from netmiko import FileTransfer, InLineTransfer
 
-import napalm.base.constants as C
+#import napalm.base.constants as C
 import napalm.base.helpers
 from napalm.base.base import NetworkDriver
 from napalm.base.exceptions import (
-	ReplaceConfigException,
-	MergeConfigException,
+#	ReplaceConfigException,
+#	MergeConfigException,
 	ConnectionClosedException,
-	CommandErrorException,
+#	CommandErrorException,
 	)
 from napalm.base.helpers import (
-	canonical_interface_name,
+#	canonical_interface_name,
 #	transform_lldp_capab,
 	textfsm_extractor,
-	split_interface,
-	abbreviated_interface_name,
-	generate_regex_or,
-	sanitize_configs,
+#	split_interface,
+#	abbreviated_interface_name,
+#	generate_regex_or,
+#	sanitize_configs,
 	)
 from napalm.base.netmiko_helpers import netmiko_args
 from napalm_alliedtelesis.constants import LLDP_CAPAB_TRANFORM_TABLE
@@ -117,7 +117,7 @@ class AlliedTelesisDriver(NetworkDriver):
 
 	@staticmethod
 	def parse_uptime(uptime_str):
-		found=re.match("(\d+) days (..:..:..)",uptime_str)
+		found=re.match("(\\d+) days (..:..:..)",uptime_str)
 		if found:
 			days=found.group(1)
 			hour,minutes,second=found.group(2).split(":")
@@ -149,7 +149,7 @@ class AlliedTelesisDriver(NetworkDriver):
 				uptime_str = line.split(": ",1)[1]
 				uptime = self.parse_uptime(uptime_str)
 			if "Base" in line:
-				found=re.match("\w+\s+\d+\s+\w+\s+(\S+\s?\S+?)\s+\S+\s+(\S+)",line)
+				found=re.match("\\w+\\s+\\d+\\s+\\w+\\s+(\\S+\\s?\\S+?)\\s+\\S+\\s+(\\S+)",line)
 				if found:
 					serial_number=found.group(2)
 					model=found.group(1)
@@ -192,7 +192,25 @@ class AlliedTelesisDriver(NetworkDriver):
 				}
 
 	def get_interfaces(self):
-		pass
+		""" Get the Interfaces """
+		
+		interface = {}
+		command = "show interface"
+		output = self._send_command(command)
+		interface_entries = textfsm_extractor( self, "show_interface", output)
+		for idx, interface_entry in enumerate(interface_entries):
+			local_intf = interface_entry.pop("interface")
+			if interface_entry["mac_address"]:
+				interface_entry["mac_address"] = napalm.base.helpers.mac(interface_entry["mac_address"])
+			if interface_entry["last_flapped"]:
+				last_flapped= interface_entry["last_flapped"]
+				interface_entry["last_flapped"] = self.parse_uptime(last_flapped)
+			interface.setdefault(local_intf, [])
+			interface[local_intf].append(interface_entry)
+		return interface
+
+
+
 
 	def get_environment(self):
 		"""
@@ -205,7 +223,7 @@ class AlliedTelesisDriver(NetworkDriver):
 		mem_cmd = "show memory"
 		temp_cmd = "show system environment"
 		cpu_regex=r"\s5 minutes:\s(\d+\.\d+)"
-		resource_id_regex=r"Resource\sID:\s\d+\s+Name:\s.*?(?=^Resource\sID:\s\d+\s+Name:\s|\Z)"
+#		resource_id_regex=r"Resource\sID:\s\d+\s+Name:\s.*?(?=^Resource\sID:\s\d+\s+Name:\s|\Z)"
 		output = self._send_command(cpu_cmd)
 		stack_regex=r"Stack member \d.*?(?=^Stack member|\Z)"
 		env_regex=r"Resource\sID:\s\d+\s+Name:\s.*?(?=^Resource\sID:\s\d+\s+Name:\s|\Z)"
@@ -255,7 +273,7 @@ class AlliedTelesisDriver(NetworkDriver):
 		if tmp_mem:
 			mem_total=int(tmp_mem.group(1))
 			mem_free=int(tmp_mem.group(2))
-			mem_buffers=int(tmp_mem.group(3))
+#			mem_buffers=int(tmp_mem.group(3))
 			mem_used=mem_total - mem_free
 			environment["memory"]["used_ram"] = mem_used
 			environment["memory"]["available_ram"] = mem_total
@@ -263,10 +281,9 @@ class AlliedTelesisDriver(NetworkDriver):
 
 	def get_arp_table(self, vrf=""):
 		"""Return the ARP table."""
-	
 		if vrf:
 			msg = "VRF support has not been added for this getter on this platform."
-		raise NotImplementedError(msg)
+			raise NotImplementedError(msg)
 
 		arp_table = []
 		arp_cmd="show arp"
@@ -320,7 +337,6 @@ class AlliedTelesisDriver(NetworkDriver):
 	def get_lldp_neighbors_detail(self,  interface=""):
 		""" Allied Telesis Implementation of get_lldp_neighbors_detail."""
 		lldp = {}
-		lldp_interface = {}
 		if interface:
 			command = "show lldp neighbors {} detail".format(interface)
 		else:
@@ -336,7 +352,12 @@ class AlliedTelesisDriver(NetworkDriver):
 				if "[not advertised]" in lldp_entry[field]:
 					lldp_entry[field] = ""
 			lldp_entry["remote_system_description"] = " ".join([str(x) for x in lldp_entry["remote_system_description"]])
-			lldp_entry["remote_chassis_id"] = napalm.base.helpers.mac(lldp_entry["remote_chassis_id"])
+
+			""" Cause {'remote_chassis_id': '38353738-3833-5A43-4A38-323130333443', 
+			Test if "." in remote_chassis_id"""
+
+			if "." in lldp_entry["remote_chassis_id"]:
+				lldp_entry["remote_chassis_id"] = napalm.base.helpers.mac(lldp_entry["remote_chassis_id"])
 			lldp_entry["parent_interface"] = ""
 			lldp_entry["remote_system_capab"]=self._transform_lldp_capab(lldp_entry["remote_system_capab"])
 			lldp_entry["remote_system_enable_cabap"] =self._transform_lldp_capab(lldp_entry["remote_system_enable_cabap"])
@@ -372,3 +393,9 @@ class AlliedTelesisDriver(NetworkDriver):
 
 		return interfaces
 		
+
+	def get_vlans(self):
+		vlans={}
+		command="show vlan all"
+		pass
+

@@ -31,8 +31,8 @@ class TestConfigSkeletonDriver(unittest.TestCase, TestConfigNetworkDriver):
         password = 'vagrant'
         cls.vendor = 'alliedtelesis'
 
-        optional_args = {'port': 12443, }
-        cls.device = alliedtelesis.SkeletonDriver(hostname, username, password, timeout=60,
+        optional_args = {'port': 22, }
+        cls.device = alliedtelesis.AlliedTelesisDriver(hostname, username, password, timeout=60,
                                              optional_args=optional_args)
         cls.device.open()
 

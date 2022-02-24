@@ -16,8 +16,8 @@ def set_device_parameters(request):
         request.cls.device.close()
     request.addfinalizer(fin)
 
-    request.cls.driver = alliedtelesis.SkeletonDriver
-    request.cls.patched_driver = PatchedSkeletonDriver
+    request.cls.driver = alliedtelesis.AlliedTelesisDriver
+    request.cls.patched_driver = PatchedAlliedTelesisDriver
     request.cls.vendor = 'alliedtelesis'
     parent_conftest.set_device_parameters(request)
 
@@ -27,31 +27,50 @@ def pytest_generate_tests(metafunc):
     parent_conftest.pytest_generate_tests(metafunc, __file__)
 
 
-class PatchedSkeletonDriver(alliedtelesis.SkeletonDriver):
-    """Patched Skeleton Driver."""
+class PatchedAlliedTelesisDriver(alliedtelesis.AlliedTelesisDriver):
+    """Patched Allied Telesis Driver."""
 
     def __init__(self, hostname, username, password, timeout=60, optional_args=None):
-        """Patched Skeleton Driver constructor."""
+        """Patched Allied Telesis Driver constructor."""
         super().__init__(hostname, username, password, timeout, optional_args)
 
         self.patched_attrs = ['device']
-        self.device = FakeSkeletonDevice()
+        self.device = FakeAlliedTelesisDriver()
+
+    def disconnect(self):
+        pass
+
+    def is_alive(self):
+        return {
+               "is_alive": True
+               }
+
+    def open(self):
+        pass
 
 
-class FakeSkeletonDevice(BaseTestDouble):
-    """Skeleton device test double."""
+class FakeAlliedTelesisDriver(BaseTestDouble):
+    """AlliedTelesisDriver device test double."""
 
     def run_commands(self, command_list, encoding='json'):
         """Fake run_commands."""
-        result = list()
+#        result = list()
 
-        for command in command_list:
-            filename = '{}.{}'.format(self.sanitize_text(command), encoding)
-            full_path = self.find_file(filename)
+#        for command in command_list:
+#            filename = '{}.{}'.format(self.sanitize_text(command), encoding)
+#            full_path = self.find_file(filename)
 
-            if encoding == 'json':
-                result.append(self.read_json_file(full_path))
-            else:
-                result.append({'output': self.read_txt_file(full_path)})
+ #           if encoding == 'json':
+ #               result.append(self.read_json_file(full_path))
+ #           else:
+ #               result.append({'output': self.read_txt_file(full_path)})
 
-        return result
+ #       return result
+    def send_command(self, command, **kwargs):
+        filename = "{}.txt".format(self.sanitize_text(command))
+        full_path = self.find_file(filename)
+        result = self.read_txt_file(full_path)
+        return str(result)
+
+    def disconnect(self):
+        pass
